@@ -3,6 +3,7 @@ const missionForm = document.getElementById('missionForm');
 const templateForm = document.getElementById('templateForm');
 const waypointForm = document.getElementById('waypointForm');
 const waypointTable = document.getElementById('waypointTable');
+const kmzInput = document.getElementById('kmzInput');
 const creationNowBtn = document.getElementById('creationNow');
 const waypointResetBtn = document.getElementById('waypointReset');
 const downloadKMLBtn = document.getElementById('downloadKML');
@@ -15,6 +16,18 @@ const waylinesPreview = document.getElementById('waylinesPreview');
 
 const TEMPLATE_PREVIEW_PLACEHOLDER = '请填写表单以生成 template.kml 预览。';
 const WAYLINES_PREVIEW_PLACEHOLDER = '请填写表单并添加航点以生成 waylines.wpml 预览。';
+
+const PAYLOAD_PARAM_DEFAULTS = {
+  payloadPositionIndex: '',
+  focusMode: '',
+  meteringMode: '',
+  dewarpingEnable: '',
+  returnMode: '',
+  samplingRate: '',
+  scanningMode: '',
+  modelColoringEnable: '',
+  imageFormat: '',
+};
 
 const state = {
   creation: {
@@ -55,17 +68,7 @@ const state = {
     waypointHeadingPathMode: 'clockwise',
     globalWaypointTurnMode: 'coordinateTurn',
     globalUseStraightLine: false,
-    payloadParam: {
-      payloadPositionIndex: '',
-      focusMode: '',
-      meteringMode: '',
-      dewarpingEnable: '',
-      returnMode: '',
-      samplingRate: '',
-      scanningMode: '',
-      modelColoringEnable: '',
-      imageFormat: '',
-    },
+    payloadParam: { ...PAYLOAD_PARAM_DEFAULTS },
   },
   waypoints: [],
 };
@@ -75,6 +78,7 @@ let markersLayer;
 
 initForms();
 initMap();
+initImportControls();
 renderWaypoints();
 updateDownloadState();
 
@@ -229,6 +233,307 @@ function initMap() {
   }).addTo(map);
 
   markersLayer = L.layerGroup().addTo(map);
+}
+
+function initImportControls() {
+  if (!kmzInput) return;
+  kmzInput.addEventListener('change', handleKMZSelection);
+}
+
+async function handleKMZSelection(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    if (file.name.toLowerCase().endsWith('.kml')) {
+      const text = await file.text();
+      loadTemplateFromText(text, file.name);
+    } else {
+      await loadKMZFile(file);
+    }
+  } catch (error) {
+    console.error('导入 KMZ/KML 失败', error);
+    alert(`导入失败：${error.message || error}`);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function loadKMZFile(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const templateFile = zip.file(/template\.kml$/i)[0] || zip.file(/\.kml$/i)[0];
+  if (!templateFile) {
+    throw new Error('KMZ 中未找到 template.kml');
+  }
+  const templateText = await templateFile.async('string');
+  loadTemplateFromText(templateText, file.name);
+}
+
+function loadTemplateFromText(kmlText, sourceName = '文件') {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(kmlText, 'application/xml');
+  if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+    throw new Error('无法解析提供的 KML/XML 内容');
+  }
+
+  const documentNode = xmlDoc.getElementsByTagName('Document')[0];
+  if (!documentNode) {
+    throw new Error('template.kml 中缺少 Document 节点');
+  }
+
+  const missionNode = documentNode.getElementsByTagName('wpml:missionConfig')[0];
+  const folderNode = documentNode.getElementsByTagName('Folder')[0];
+
+  if (!folderNode) {
+    throw new Error('template.kml 中缺少 Folder 节点');
+  }
+
+  const creation = parseCreation(documentNode);
+  const mission = missionNode ? parseMission(missionNode) : { ...state.mission };
+  const templateData = parseTemplate(folderNode);
+  const waypoints = parseWaypoints(folderNode, templateData);
+
+  applyImportedState({ creation, mission, template: templateData, waypoints }, sourceName);
+}
+
+function applyImportedState(imported, sourceName) {
+  if (imported.creation) {
+    Object.assign(state.creation, imported.creation);
+  }
+
+  if (imported.mission) {
+    Object.assign(state.mission, imported.mission);
+  }
+
+  if (imported.template) {
+    Object.assign(state.template, imported.template);
+    state.template.payloadParam = {
+      ...PAYLOAD_PARAM_DEFAULTS,
+      ...(imported.template.payloadParam || {}),
+    };
+  }
+
+  state.waypoints = Array.isArray(imported.waypoints) ? imported.waypoints : [];
+
+  setFormValues(creationForm, state.creation);
+  setFormValues(missionForm, state.mission);
+  setFormValues(templateForm, state.template);
+
+  renderWaypoints();
+  renderMarkers();
+  updateDownloadState();
+  resetWaypointForm();
+  updateWaypointFieldAvailability();
+
+  const suffix = sourceName ? `已从 ${sourceName} 导入` : '已导入';
+  updateStatus(creationStatus, `创建信息${suffix}`);
+  updateStatus(missionStatus, `任务配置${suffix}`);
+  updateStatus(templateStatus, `模板参数${suffix}`);
+}
+
+function parseCreation(documentNode) {
+  return {
+    author: getTextContent(documentNode, 'wpml:author'),
+    createTime: parseOptionalInteger(getTextContent(documentNode, 'wpml:createTime')),
+    updateTime: parseOptionalInteger(getTextContent(documentNode, 'wpml:updateTime')),
+  };
+}
+
+function parseMission(missionNode) {
+  const mission = {
+    flyToWaylineMode: getTextOrDefault(missionNode, 'wpml:flyToWaylineMode', state.mission.flyToWaylineMode),
+    finishAction: getTextOrDefault(missionNode, 'wpml:finishAction', state.mission.finishAction),
+    exitOnRCLost: getTextOrDefault(missionNode, 'wpml:exitOnRCLost', state.mission.exitOnRCLost),
+    executeRCLostAction: getTextOrDefault(
+      missionNode,
+      'wpml:executeRCLostAction',
+      state.mission.executeRCLostAction,
+    ),
+    takeOffSecurityHeight: parseOptionalNumber(getTextContent(missionNode, 'wpml:takeOffSecurityHeight')),
+    takeOffRefPoint: getTextContent(missionNode, 'wpml:takeOffRefPoint'),
+    takeOffRefPointAGLHeight: parseOptionalNumber(
+      getTextContent(missionNode, 'wpml:takeOffRefPointAGLHeight'),
+    ),
+    globalTransitionalSpeed: parseOptionalNumber(getTextContent(missionNode, 'wpml:globalTransitionalSpeed')),
+    globalRTHHeight: parseOptionalNumber(getTextContent(missionNode, 'wpml:globalRTHHeight')),
+    droneEnumValue: '',
+    droneSubEnumValue: '',
+    payloadEnumValue: '',
+    payloadPositionIndex: '',
+  };
+
+  const droneInfo = missionNode.getElementsByTagName('wpml:droneInfo')[0];
+  if (droneInfo) {
+    mission.droneEnumValue = parseOptionalInteger(getTextContent(droneInfo, 'wpml:droneEnumValue'));
+    mission.droneSubEnumValue = parseOptionalInteger(getTextContent(droneInfo, 'wpml:droneSubEnumValue'));
+  }
+
+  const payloadInfo = missionNode.getElementsByTagName('wpml:payloadInfo')[0];
+  if (payloadInfo) {
+    mission.payloadEnumValue = parseOptionalInteger(getTextContent(payloadInfo, 'wpml:payloadEnumValue'));
+    mission.payloadPositionIndex = parseOptionalInteger(
+      getTextContent(payloadInfo, 'wpml:payloadPositionIndex'),
+    );
+  }
+
+  return mission;
+}
+
+function parseTemplate(folderNode) {
+  const coordinateNode = folderNode.getElementsByTagName('wpml:waylineCoordinateSysParam')[0];
+  const headingNode = folderNode.getElementsByTagName('wpml:globalWaypointHeadingParam')[0];
+  const payloadNode = folderNode.getElementsByTagName('wpml:payloadParam')[0];
+
+  return {
+    templateType: getTextOrDefault(folderNode, 'wpml:templateType', state.template.templateType),
+    templateId: parseOptionalInteger(getTextContent(folderNode, 'wpml:templateId')),
+    coordinateMode: coordinateNode
+      ? getTextOrDefault(coordinateNode, 'wpml:coordinateMode', state.template.coordinateMode)
+      : state.template.coordinateMode,
+    heightMode: coordinateNode
+      ? getTextOrDefault(coordinateNode, 'wpml:heightMode', state.template.heightMode)
+      : state.template.heightMode,
+    globalShootHeight: coordinateNode
+      ? parseOptionalNumber(getTextContent(coordinateNode, 'wpml:globalShootHeight'))
+      : '',
+    globalHeight: parseOptionalNumber(getTextContent(folderNode, 'wpml:globalHeight')),
+    positioningType: coordinateNode
+      ? getTextOrDefault(coordinateNode, 'wpml:positioningType', state.template.positioningType)
+      : state.template.positioningType,
+    surfaceFollowModeEnable: coordinateNode
+      ? parseBooleanFlag(getTextContent(coordinateNode, 'wpml:surfaceFollowModeEnable'))
+      : false,
+    surfaceRelativeHeight: coordinateNode
+      ? parseOptionalNumber(getTextContent(coordinateNode, 'wpml:surfaceRelativeHeight'))
+      : '',
+    autoFlightSpeed: parseOptionalNumber(getTextContent(folderNode, 'wpml:autoFlightSpeed')),
+    gimbalPitchMode: getTextOrDefault(folderNode, 'wpml:gimbalPitchMode', state.template.gimbalPitchMode),
+    waypointHeadingMode: headingNode
+      ? getTextOrDefault(headingNode, 'wpml:waypointHeadingMode', state.template.waypointHeadingMode)
+      : state.template.waypointHeadingMode,
+    waypointHeadingAngle: headingNode
+      ? parseOptionalNumber(getTextContent(headingNode, 'wpml:waypointHeadingAngle'))
+      : '',
+    waypointPoiPoint: headingNode ? getTextContent(headingNode, 'wpml:waypointPoiPoint') : '',
+    waypointHeadingPathMode: headingNode
+      ? getTextOrDefault(headingNode, 'wpml:waypointHeadingPathMode', state.template.waypointHeadingPathMode)
+      : state.template.waypointHeadingPathMode,
+    globalWaypointTurnMode: getTextOrDefault(
+      folderNode,
+      'wpml:globalWaypointTurnMode',
+      state.template.globalWaypointTurnMode,
+    ),
+    globalUseStraightLine: parseBooleanFlag(
+      getTextContent(folderNode, 'wpml:globalUseStraightLine'),
+      state.template.globalUseStraightLine,
+    ),
+    payloadParam: parsePayloadParam(payloadNode),
+  };
+}
+
+function parsePayloadParam(payloadNode) {
+  if (!payloadNode) {
+    return { ...PAYLOAD_PARAM_DEFAULTS };
+  }
+
+  return {
+    ...PAYLOAD_PARAM_DEFAULTS,
+    payloadPositionIndex: parseOptionalInteger(getTextContent(payloadNode, 'wpml:payloadPositionIndex')),
+    focusMode: getTextContent(payloadNode, 'wpml:focusMode'),
+    meteringMode: getTextContent(payloadNode, 'wpml:meteringMode'),
+    dewarpingEnable: getTextContent(payloadNode, 'wpml:dewarpingEnable'),
+    returnMode: getTextContent(payloadNode, 'wpml:returnMode'),
+    samplingRate: parseOptionalInteger(getTextContent(payloadNode, 'wpml:samplingRate')),
+    scanningMode: getTextContent(payloadNode, 'wpml:scanningMode'),
+    modelColoringEnable: getTextContent(payloadNode, 'wpml:modelColoringEnable'),
+    imageFormat: getTextContent(payloadNode, 'wpml:imageFormat'),
+  };
+}
+
+function parseWaypoints(folderNode, templateDefaults) {
+  return Array.from(folderNode.getElementsByTagName('Placemark')).map((placemark) =>
+    parseWaypointPlacemark(placemark, templateDefaults),
+  );
+}
+
+function parseWaypointPlacemark(placemark, templateDefaults) {
+  const coordinateText = getTextContent(placemark, 'coordinates');
+  const coordinateParts = coordinateText
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+
+  const longitude = Number.parseFloat(coordinateParts[0]);
+  const latitude = Number.parseFloat(coordinateParts[1]);
+
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+    throw new Error('航点坐标缺失或无效，无法导入。');
+  }
+
+  const coordinateAltitude = coordinateParts[2] !== undefined ? parseOptionalNumber(coordinateParts[2]) : '';
+
+  const useGlobalHeight = parseBooleanFlag(getTextContent(placemark, 'wpml:useGlobalHeight'), true);
+  const useGlobalSpeed = parseBooleanFlag(getTextContent(placemark, 'wpml:useGlobalSpeed'), true);
+  const useGlobalHeadingParam = parseBooleanFlag(
+    getTextContent(placemark, 'wpml:useGlobalHeadingParam'),
+    true,
+  );
+  const useGlobalTurnParam = parseBooleanFlag(getTextContent(placemark, 'wpml:useGlobalTurnParam'), true);
+
+  const headingNode = placemark.getElementsByTagName('wpml:waypointHeadingParam')[0];
+  const turnNode = placemark.getElementsByTagName('wpml:waypointTurnParam')[0];
+
+  return {
+    name: getTextOrDefault(placemark, 'name', '未命名航点'),
+    description: getTextContent(placemark, 'description'),
+    longitude,
+    latitude,
+    coordinateAltitude,
+    ellipsoidHeight: parseOptionalNumber(getTextContent(placemark, 'wpml:ellipsoidHeight')),
+    height: parseOptionalNumber(getTextContent(placemark, 'wpml:height')),
+    gimbalPitchAngle: parseOptionalNumber(getTextContent(placemark, 'wpml:gimbalPitchAngle')),
+    useGlobalHeight,
+    useGlobalSpeed,
+    useGlobalHeadingParam,
+    useGlobalTurnParam,
+    waypointSpeed: useGlobalSpeed ? '' : parseOptionalNumber(getTextContent(placemark, 'wpml:waypointSpeed')),
+    waypointHeadingMode: headingNode
+      ? getTextOrDefault(headingNode, 'wpml:waypointHeadingMode', templateDefaults.waypointHeadingMode)
+      : templateDefaults.waypointHeadingMode,
+    waypointHeadingAngle: headingNode
+      ? parseOptionalNumber(getTextContent(headingNode, 'wpml:waypointHeadingAngle'))
+      : '',
+    waypointPoiPoint: headingNode ? getTextContent(headingNode, 'wpml:waypointPoiPoint') : '',
+    waypointHeadingPathMode: headingNode
+      ? getTextOrDefault(headingNode, 'wpml:waypointHeadingPathMode', templateDefaults.waypointHeadingPathMode)
+      : templateDefaults.waypointHeadingPathMode,
+    waypointTurnMode: turnNode
+      ? getTextOrDefault(turnNode, 'wpml:waypointTurnMode', templateDefaults.globalWaypointTurnMode)
+      : templateDefaults.globalWaypointTurnMode,
+    waypointTurnDampingDist: turnNode
+      ? parseOptionalNumber(getTextContent(turnNode, 'wpml:waypointTurnDampingDist'))
+      : '',
+    useStraightLine: parseBooleanFlag(getTextContent(placemark, 'wpml:useStraightLine'), false),
+    isRisky: parseBooleanFlag(getTextContent(placemark, 'wpml:isRisky'), false),
+  };
+}
+
+function getTextContent(parent, tagName) {
+  if (!parent) return '';
+  const element = parent.getElementsByTagName(tagName)[0];
+  return element ? element.textContent.trim() : '';
+}
+
+function getTextOrDefault(parent, tagName, fallback = '') {
+  const value = getTextContent(parent, tagName);
+  return value === '' ? fallback : value;
+}
+
+function parseBooleanFlag(value, defaultValue = false) {
+  const text = `${value ?? ''}`.trim();
+  if (text === '') return defaultValue;
+  return text === '1' || text.toLowerCase() === 'true';
 }
 
 function renderWaypoints() {

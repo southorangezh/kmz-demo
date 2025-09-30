@@ -132,6 +132,22 @@ main {
   gap: 1rem;
 }
 
+.file-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--muted-bg);
+  color: var(--text);
+}
+
+.file-input input[type='file'] {
+  font-size: 0.95rem;
+  color: inherit;
+}
+
 .subsection {
   padding: 1rem;
   border: 1px dashed var(--border);

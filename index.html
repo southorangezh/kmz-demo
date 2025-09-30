@@ -20,6 +20,19 @@
     <div class="workspace-grid">
       <div class="workspace-forms">
         <section class="card">
+          <h2>0. 导入已有模板（可选）</h2>
+          <p class="hint">
+            如需继续编辑既有航线，可在此选择 <code>template.kmz</code> 或 <code>template.kml</code> 文件，系统会解析
+            XML 并回填到左侧表单中。
+          </p>
+          <label class="file-input">
+            <span class="label-title">选择文件</span>
+            <input type="file" id="kmzInput" accept=".kmz,.kml" />
+          </label>
+          <p class="hint">导入会覆盖当前表单与航点，请在导入前确认需要保留的数据已保存。</p>
+        </section>
+
+        <section class="card">
       <h2>1. 创建信息</h2>
       <form id="creationForm" class="stack">
         <div class="field-grid">
