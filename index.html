@@ -17,7 +17,9 @@
   </header>
 
   <main>
-    <section class="card">
+    <div class="workspace-grid">
+      <div class="workspace-forms">
+        <section class="card">
       <h2>1. 创建信息</h2>
       <form id="creationForm" class="stack">
         <div class="field-grid">
@@ -44,9 +46,9 @@
         </div>
       </form>
       <p id="creationStatus" class="status"></p>
-    </section>
+        </section>
 
-    <section class="card">
+        <section class="card">
       <h2>2. 任务配置（<code>&lt;wpml:missionConfig&gt;</code>）</h2>
       <form id="missionForm" class="stack">
         <div class="field-grid">
@@ -346,12 +348,12 @@
         </div>
       </form>
       <p id="templateStatus" class="status"></p>
-    </section>
+        </section>
 
-    <section class="card layout">
-      <div class="form-panel">
-        <h2>4. 新增航点（<code>&lt;Placemark&gt;</code>）</h2>
-        <form id="waypointForm" class="stack">
+        <section class="card waypoint-layout">
+          <div class="form-panel">
+            <h2>4. 新增航点（<code>&lt;Placemark&gt;</code>）</h2>
+            <form id="waypointForm" class="stack">
           <input type="hidden" name="editIndex" />
           <label>
             <span class="label-title">航点名称（<code>&lt;name&gt;</code>）</span>
@@ -504,49 +506,62 @@
               </label>
             </div>
           </div>
-          <div class="actions">
-            <button type="submit">保存航点</button>
-            <button type="button" class="secondary" id="waypointReset">清空表单</button>
+              <div class="actions">
+                <button type="submit">保存航点</button>
+                <button type="button" class="secondary" id="waypointReset">清空表单</button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-      <div class="map-panel">
-        <h2>航点预览</h2>
-        <div id="map"></div>
-      </div>
-    </section>
+          <div class="map-panel">
+            <h2>航点预览</h2>
+            <div id="map"></div>
+          </div>
+        </section>
 
-    <section class="card">
-      <h2>5. 航点列表</h2>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>名称</th>
-              <th>经度</th>
-              <th>纬度</th>
-              <th>AGL 高度</th>
-              <th>继承项</th>
-              <th>标签</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="waypointTable"></tbody>
-        </table>
-      </div>
-    </section>
+        <section class="card">
+          <h2>5. 航点列表</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>名称</th>
+                  <th>经度</th>
+                  <th>纬度</th>
+                  <th>AGL 高度</th>
+                  <th>继承项</th>
+                  <th>标签</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="waypointTable"></tbody>
+            </table>
+          </div>
+        </section>
 
-    <section class="card">
-      <h2>6. 导出</h2>
-      <p class="hint">
-        下载前请确保创建信息、任务配置、模板参数均已保存，并至少新增一个航点。
-      </p>
-      <div class="actions">
-        <button id="downloadKML" class="secondary">下载 KML</button>
-        <button id="downloadKMZ">下载 KMZ</button>
+        <section class="card">
+          <h2>6. 导出</h2>
+          <p class="hint">
+            下载前请确保创建信息、任务配置、模板参数均已保存，并至少新增一个航点。
+          </p>
+          <div class="actions">
+            <button id="downloadKML" class="secondary">下载 KML</button>
+            <button id="downloadKMZ">下载 KMZ</button>
+          </div>
+        </section>
       </div>
-    </section>
+      <aside class="workspace-preview card">
+        <h2>实时 XML 预览</h2>
+        <div class="preview-group">
+          <h3>template.kml</h3>
+          <pre id="templatePreview" class="code-preview" aria-live="polite">请填写表单以生成 template.kml 预览。</pre>
+        </div>
+        <div class="preview-group">
+          <h3>waylines.wpml</h3>
+          <pre id="waylinesPreview" class="code-preview" aria-live="polite">请填写表单并添加航点以生成 waylines.wpml 预览。</pre>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <footer>

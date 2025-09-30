@@ -10,6 +10,11 @@ const downloadKMZBtn = document.getElementById('downloadKMZ');
 const creationStatus = document.getElementById('creationStatus');
 const missionStatus = document.getElementById('missionStatus');
 const templateStatus = document.getElementById('templateStatus');
+const templatePreview = document.getElementById('templatePreview');
+const waylinesPreview = document.getElementById('waylinesPreview');
+
+const TEMPLATE_PREVIEW_PLACEHOLDER = '请填写表单以生成 template.kml 预览。';
+const WAYLINES_PREVIEW_PLACEHOLDER = '请填写表单并添加航点以生成 waylines.wpml 预览。';
 
 const state = {
   creation: {
@@ -85,6 +90,7 @@ function initForms() {
     state.creation.createTime = parseOptionalInteger(data.get('createTime'));
     state.creation.updateTime = parseOptionalInteger(data.get('updateTime'));
     updateStatus(creationStatus, '创建信息已保存');
+    updateXMLPreview();
   });
 
   missionForm.addEventListener('submit', (event) => {
@@ -104,6 +110,7 @@ function initForms() {
     state.mission.payloadEnumValue = parseOptionalInteger(data.get('payloadEnumValue'));
     state.mission.payloadPositionIndex = parseOptionalInteger(data.get('payloadPositionIndex'));
     updateStatus(missionStatus, '任务信息已保存');
+    updateXMLPreview();
   });
 
   templateForm.addEventListener('submit', (event) => {
@@ -138,6 +145,7 @@ function initForms() {
     state.template.payloadParam.modelColoringEnable = data.get('payloadParam.modelColoringEnable') || '';
     state.template.payloadParam.imageFormat = (data.get('payloadParam.imageFormat') || '').trim();
     updateStatus(templateStatus, '模板信息已保存');
+    updateXMLPreview();
   });
 
   waypointForm.addEventListener('submit', (event) => {
@@ -226,6 +234,7 @@ function initMap() {
 function renderWaypoints() {
   if (state.waypoints.length === 0) {
     waypointTable.innerHTML = '<tr class="empty-row"><td colspan="8">暂无航点，请使用上方表单逐项添加。</td></tr>';
+    updateXMLPreview();
     return;
   }
 
@@ -268,6 +277,8 @@ function renderWaypoints() {
   waypointTable.querySelectorAll('button').forEach((button) => {
     button.addEventListener('click', () => handleWaypointRowAction(button.dataset));
   });
+
+  updateXMLPreview();
 }
 
 function handleWaypointRowAction({ action, index }) {
@@ -343,7 +354,8 @@ downloadKMLBtn.addEventListener('click', () => {
 
 downloadKMZBtn.addEventListener('click', async () => {
   const zip = new JSZip();
-  zip.file('doc.kml', generateKML());
+  zip.file('template.kml', generateKML());
+  zip.file('waylines.wpml', generateWaylines());
   const blob = await zip.generateAsync({ type: 'blob' });
   triggerDownload('template.kmz', blob);
 });
@@ -357,52 +369,8 @@ function generateKML() {
     .filter(Boolean)
     .join('\n      ');
 
-  const missionXML = [
-    `<wpml:flyToWaylineMode>${state.mission.flyToWaylineMode}</wpml:flyToWaylineMode>`,
-    `<wpml:finishAction>${state.mission.finishAction}</wpml:finishAction>`,
-    `<wpml:exitOnRCLost>${state.mission.exitOnRCLost}</wpml:exitOnRCLost>`,
-    `<wpml:executeRCLostAction>${state.mission.executeRCLostAction}</wpml:executeRCLostAction>`,
-    optionalTag('wpml:takeOffSecurityHeight', state.mission.takeOffSecurityHeight),
-    optionalTag('wpml:takeOffRefPoint', state.mission.takeOffRefPoint),
-    optionalTag('wpml:takeOffRefPointAGLHeight', state.mission.takeOffRefPointAGLHeight),
-    optionalTag('wpml:globalTransitionalSpeed', state.mission.globalTransitionalSpeed),
-    optionalTag('wpml:globalRTHHeight', state.mission.globalRTHHeight),
-    state.mission.droneEnumValue !== ''
-      ? `<wpml:droneInfo>\n        <wpml:droneEnumValue>${state.mission.droneEnumValue}</wpml:droneEnumValue>\n        ${optionalTag(
-            'wpml:droneSubEnumValue',
-            state.mission.droneSubEnumValue,
-            '        ',
-          )}\n      </wpml:droneInfo>`
-      : '',
-    state.mission.payloadEnumValue !== ''
-      ? `<wpml:payloadInfo>\n        <wpml:payloadEnumValue>${state.mission.payloadEnumValue}</wpml:payloadEnumValue>\n        ${optionalTag(
-            'wpml:payloadPositionIndex',
-            state.mission.payloadPositionIndex,
-            '        ',
-          )}\n      </wpml:payloadInfo>`
-      : '',
-  ]
-    .filter(Boolean)
-    .join('\n      ');
-
-  const payloadParam = state.template.payloadParam;
-  const payloadParamInner = [
-    optionalTag('wpml:payloadPositionIndex', payloadParam.payloadPositionIndex, '        '),
-    optionalTag('wpml:focusMode', payloadParam.focusMode, '        '),
-    optionalTag('wpml:meteringMode', payloadParam.meteringMode, '        '),
-    optionalTag('wpml:dewarpingEnable', payloadParam.dewarpingEnable, '        '),
-    optionalTag('wpml:returnMode', payloadParam.returnMode, '        '),
-    optionalTag('wpml:samplingRate', payloadParam.samplingRate, '        '),
-    optionalTag('wpml:scanningMode', payloadParam.scanningMode, '        '),
-    optionalTag('wpml:modelColoringEnable', payloadParam.modelColoringEnable, '        '),
-    optionalTag('wpml:imageFormat', payloadParam.imageFormat, '        '),
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  const payloadParamXML = payloadParamInner
-    ? `<wpml:payloadParam>\n${payloadParamInner}\n      </wpml:payloadParam>`
-    : '';
+  const missionXML = createMissionXML();
+  const payloadParamXML = createPayloadParamXML();
 
   const folderXML = [
     `<wpml:templateType>${state.template.templateType}</wpml:templateType>`,
@@ -449,6 +417,237 @@ function generateKML() {
     </Folder>
   </Document>
 </kml>`;
+}
+
+function createMissionXML(indent = '      ') {
+  const missionLines = [
+    `${indent}<wpml:flyToWaylineMode>${state.mission.flyToWaylineMode}</wpml:flyToWaylineMode>`,
+    `${indent}<wpml:finishAction>${state.mission.finishAction}</wpml:finishAction>`,
+    `${indent}<wpml:exitOnRCLost>${state.mission.exitOnRCLost}</wpml:exitOnRCLost>`,
+    `${indent}<wpml:executeRCLostAction>${state.mission.executeRCLostAction}</wpml:executeRCLostAction>`,
+  ];
+
+  [
+    optionalTag('wpml:takeOffSecurityHeight', state.mission.takeOffSecurityHeight, indent),
+    optionalTag('wpml:takeOffRefPoint', state.mission.takeOffRefPoint, indent),
+    optionalTag('wpml:takeOffRefPointAGLHeight', state.mission.takeOffRefPointAGLHeight, indent),
+    optionalTag('wpml:globalTransitionalSpeed', state.mission.globalTransitionalSpeed, indent),
+    optionalTag('wpml:globalRTHHeight', state.mission.globalRTHHeight, indent),
+  ]
+    .filter(Boolean)
+    .forEach((line) => missionLines.push(line));
+
+  if (state.mission.droneEnumValue !== '') {
+    const innerIndent = `${indent}  `;
+    const droneLines = [
+      `${indent}<wpml:droneInfo>`,
+      `${innerIndent}<wpml:droneEnumValue>${state.mission.droneEnumValue}</wpml:droneEnumValue>`,
+    ];
+    const droneSub = optionalTag('wpml:droneSubEnumValue', state.mission.droneSubEnumValue, innerIndent);
+    if (droneSub) {
+      droneLines.push(droneSub);
+    }
+    droneLines.push(`${indent}</wpml:droneInfo>`);
+    missionLines.push(droneLines.join('\n'));
+  }
+
+  if (state.mission.payloadEnumValue !== '') {
+    const innerIndent = `${indent}  `;
+    const payloadLines = [
+      `${indent}<wpml:payloadInfo>`,
+      `${innerIndent}<wpml:payloadEnumValue>${state.mission.payloadEnumValue}</wpml:payloadEnumValue>`,
+    ];
+    const payloadIndex = optionalTag('wpml:payloadPositionIndex', state.mission.payloadPositionIndex, innerIndent);
+    if (payloadIndex) {
+      payloadLines.push(payloadIndex);
+    }
+    payloadLines.push(`${indent}</wpml:payloadInfo>`);
+    missionLines.push(payloadLines.join('\n'));
+  }
+
+  return missionLines.join('\n');
+}
+
+function createPayloadParamXML(indent = '      ') {
+  const payloadParam = state.template.payloadParam;
+  const innerIndent = `${indent}  `;
+  const payloadLines = [
+    optionalTag('wpml:payloadPositionIndex', payloadParam.payloadPositionIndex, innerIndent),
+    optionalTag('wpml:focusMode', payloadParam.focusMode, innerIndent),
+    optionalTag('wpml:meteringMode', payloadParam.meteringMode, innerIndent),
+    optionalTag('wpml:dewarpingEnable', payloadParam.dewarpingEnable, innerIndent),
+    optionalTag('wpml:returnMode', payloadParam.returnMode, innerIndent),
+    optionalTag('wpml:samplingRate', payloadParam.samplingRate, innerIndent),
+    optionalTag('wpml:scanningMode', payloadParam.scanningMode, innerIndent),
+    optionalTag('wpml:modelColoringEnable', payloadParam.modelColoringEnable, innerIndent),
+    optionalTag('wpml:imageFormat', payloadParam.imageFormat, innerIndent),
+  ].filter(Boolean);
+
+  if (payloadLines.length === 0) {
+    return '';
+  }
+
+  return [`${indent}<wpml:payloadParam>`, ...payloadLines, `${indent}</wpml:payloadParam>`].join('\n');
+}
+
+function createHeadingParamXML(source, indent = '        ') {
+  if (!source || !source.waypointHeadingMode) {
+    return '';
+  }
+
+  const headingLines = [
+    `${indent}<wpml:waypointHeadingParam>`,
+    `${indent}  <wpml:waypointHeadingMode>${source.waypointHeadingMode}</wpml:waypointHeadingMode>`,
+  ];
+
+  const angleLine = optionalTag('wpml:waypointHeadingAngle', source.waypointHeadingAngle, `${indent}  `);
+  if (angleLine) headingLines.push(angleLine);
+  const poiLine = optionalTag('wpml:waypointPoiPoint', source.waypointPoiPoint, `${indent}  `);
+  if (poiLine) headingLines.push(poiLine);
+  if (source.waypointHeadingPathMode) {
+    headingLines.push(
+      `${indent}  <wpml:waypointHeadingPathMode>${source.waypointHeadingPathMode}</wpml:waypointHeadingPathMode>`,
+    );
+  }
+
+  headingLines.push(`${indent}</wpml:waypointHeadingParam>`);
+  return headingLines.join('\n');
+}
+
+function createTurnParamXML(source, indent = '        ') {
+  if (!source || !source.waypointTurnMode) {
+    return '';
+  }
+
+  const turnLines = [
+    `${indent}<wpml:waypointTurnParam>`,
+    `${indent}  <wpml:waypointTurnMode>${source.waypointTurnMode}</wpml:waypointTurnMode>`,
+  ];
+
+  const dampingLine = optionalTag('wpml:waypointTurnDampingDist', source.waypointTurnDampingDist, `${indent}  `);
+  if (dampingLine) {
+    turnLines.push(dampingLine);
+  }
+
+  turnLines.push(`${indent}</wpml:waypointTurnParam>`);
+  return turnLines.join('\n');
+}
+
+function resolveExecuteHeightMode() {
+  if (state.template.surfaceFollowModeEnable) {
+    return 'realTimeFollowSurface';
+  }
+  if (state.template.heightMode === 'WGS84') {
+    return 'WGS84';
+  }
+  return 'relativeToStartPoint';
+}
+
+function generateWaylines() {
+  const missionXML = createMissionXML();
+  const payloadParamXML = createPayloadParamXML();
+  const waylineId = state.template.templateId === '' ? 0 : state.template.templateId;
+
+  const folderXML = [
+    optionalTag('wpml:templateId', state.template.templateId),
+    `<wpml:waylineId>${waylineId}</wpml:waylineId>`,
+    `<wpml:executeHeightMode>${resolveExecuteHeightMode()}</wpml:executeHeightMode>`,
+    optionalTag('wpml:autoFlightSpeed', state.template.autoFlightSpeed),
+    payloadParamXML,
+    state.waypoints
+      .map((waypoint, index) => {
+        const coordinates = [waypoint.longitude, waypoint.latitude];
+        if (Number.isFinite(waypoint.coordinateAltitude)) {
+          coordinates.push(waypoint.coordinateAltitude);
+        }
+
+        const executeHeight = waypoint.useGlobalHeight ? state.template.globalHeight : waypoint.height;
+        const waypointSpeed = waypoint.useGlobalSpeed ? state.template.autoFlightSpeed : waypoint.waypointSpeed;
+        const headingSource = waypoint.useGlobalHeadingParam
+          ? {
+              waypointHeadingMode: state.template.waypointHeadingMode,
+              waypointHeadingAngle: state.template.waypointHeadingAngle,
+              waypointPoiPoint: state.template.waypointPoiPoint,
+              waypointHeadingPathMode: state.template.waypointHeadingPathMode,
+            }
+          : waypoint;
+        const turnSource = waypoint.useGlobalTurnParam
+          ? {
+              waypointTurnMode: state.template.globalWaypointTurnMode,
+              waypointTurnDampingDist: '',
+            }
+          : waypoint;
+        const useStraightLineValue = waypoint.useGlobalTurnParam
+          ? state.template.globalUseStraightLine
+          : waypoint.useStraightLine;
+
+        const headingParamXML = createHeadingParamXML(headingSource, '        ');
+        const turnParamXML = createTurnParamXML(turnSource, '        ');
+
+        const lines = [
+          '      <Placemark>',
+          `        <name>${escapeXML(waypoint.name)}</name>`,
+          optionalTag('description', waypoint.description, '        '),
+          '        <Point>',
+          `          <coordinates>${coordinates.join(',')}</coordinates>`,
+          '        </Point>',
+          `        <wpml:index>${index}</wpml:index>`,
+        ];
+
+        const ellipsoidLine = optionalTag('wpml:ellipsoidHeight', waypoint.ellipsoidHeight, '        ');
+        if (ellipsoidLine) lines.push(ellipsoidLine);
+
+        const executeHeightLine = optionalTag('wpml:executeHeight', executeHeight, '        ');
+        if (executeHeightLine) lines.push(executeHeightLine);
+
+        const speedLine = optionalTag('wpml:waypointSpeed', waypointSpeed, '        ');
+        if (speedLine) lines.push(speedLine);
+
+        if (headingParamXML) lines.push(headingParamXML);
+        if (turnParamXML) lines.push(turnParamXML);
+
+        lines.push(`        <wpml:useStraightLine>${useStraightLineValue ? 1 : 0}</wpml:useStraightLine>`);
+        lines.push(`        <wpml:isRisky>${waypoint.isRisky ? 1 : 0}</wpml:isRisky>`);
+
+        const gimbalLine = optionalTag('wpml:gimbalPitchAngle', waypoint.gimbalPitchAngle, '        ');
+        if (gimbalLine) lines.push(gimbalLine);
+
+        lines.push('      </Placemark>');
+        return lines.filter(Boolean).join('\n');
+      })
+      .join('\n'),
+  ]
+    .filter(Boolean)
+    .join('\n      ');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.dji.com/wpmz/1.0.2">
+  <Document>
+    <wpml:missionConfig>
+      ${missionXML}
+    </wpml:missionConfig>
+    <Folder>
+      ${folderXML}
+    </Folder>
+  </Document>
+</kml>`;
+}
+
+function updateXMLPreview() {
+  if (!templatePreview || !waylinesPreview) {
+    return;
+  }
+
+  const templateXML = generateKML().trim();
+  templatePreview.textContent = templateXML || TEMPLATE_PREVIEW_PLACEHOLDER;
+
+  if (state.waypoints.length === 0) {
+    waylinesPreview.textContent = WAYLINES_PREVIEW_PLACEHOLDER;
+    return;
+  }
+
+  const waylinesXML = generateWaylines().trim();
+  waylinesPreview.textContent = waylinesXML || WAYLINES_PREVIEW_PLACEHOLDER;
 }
 
 function optionalTag(tagName, value, indent = '      ') {

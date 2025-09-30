@@ -59,8 +59,57 @@ header p {
 
 main {
   padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.workspace-grid {
   display: grid;
   gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.workspace-forms {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.workspace-preview {
+  position: sticky;
+  top: clamp(1rem, 3vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-self: start;
+}
+
+.workspace-preview h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.preview-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.code-preview {
+  margin: 0;
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SFMono-Regular', 'Consolas', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow: auto;
+  max-height: clamp(280px, 50vh, 460px);
+  white-space: pre;
+}
+
+@media (prefers-color-scheme: dark) {
+  .code-preview {
+    background: rgba(148, 163, 184, 0.08);
+  }
 }
 
 .card {
@@ -276,7 +325,7 @@ tr:hover td {
   font-style: italic;
 }
 
-.layout {
+.waypoint-layout {
   display: grid;
   grid-template-columns: minmax(280px, 420px) minmax(280px, 1fr);
   gap: clamp(1rem, 3vw, 2rem);
@@ -302,8 +351,23 @@ footer {
   text-align: center;
 }
 
+@media (min-width: 1100px) {
+  .workspace-grid {
+    grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr);
+    align-items: start;
+  }
+}
+
 @media (max-width: 960px) {
-  .layout {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-preview {
+    position: static;
+  }
+
+  .waypoint-layout {
     grid-template-columns: 1fr;
   }
 
