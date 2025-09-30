@@ -114,14 +114,31 @@ label {
   flex-direction: column;
   gap: 0.35rem;
   font-weight: 600;
+  color: var(--text);
+}
+
+label .label-title {
+  font-weight: inherit;
+}
+
+label .field-hint {
+  font-weight: 400;
+  font-size: 0.85rem;
   color: var(--text-light);
+  line-height: 1.4;
 }
 
 label.checkbox {
-  flex-direction: row;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.checkbox-main {
+  display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-weight: 500;
 }
 
 input,

@@ -22,15 +22,18 @@
       <form id="creationForm" class="stack">
         <div class="field-grid">
           <label>
-            文件作者（<code>&lt;wpml:author&gt;</code>）
+            <span class="label-title">文件作者（<code>&lt;wpml:author&gt;</code>）</span>
+            <span class="field-hint">填写模板的创建者或单位名称，便于在任务记录中追溯来源。</span>
             <input type="text" name="author" placeholder="示例：Cloud API" />
           </label>
           <label>
-            创建时间（ms，<code>&lt;wpml:createTime&gt;</code>）
+            <span class="label-title">创建时间（ms，<code>&lt;wpml:createTime&gt;</code>）</span>
+            <span class="field-hint">使用 Unix 时间戳（毫秒）表示模板首次生成的时间，例如 <code>Date.now()</code>。</span>
             <input type="number" name="createTime" inputmode="numeric" />
           </label>
           <label>
-            更新时间（ms，<code>&lt;wpml:updateTime&gt;</code>）
+            <span class="label-title">更新时间（ms，<code>&lt;wpml:updateTime&gt;</code>）</span>
+            <span class="field-hint">同样以 Unix 毫秒时间戳记录模板最近一次更新的时间。</span>
             <input type="number" name="updateTime" inputmode="numeric" />
           </label>
         </div>
@@ -48,14 +51,16 @@
       <form id="missionForm" class="stack">
         <div class="field-grid">
           <label>
-            飞向首航点模式
+            <span class="label-title">飞向首航点模式</span>
+            <span class="field-hint">指定飞机起飞后前往第一个航点时的姿态策略，选择“safely”可确保爬升到安全高度后再前往航点。</span>
             <select name="flyToWaylineMode">
               <option value="safely">safely</option>
               <option value="pointToPoint">pointToPoint</option>
             </select>
           </label>
           <label>
-            航线结束动作
+            <span class="label-title">航线结束动作</span>
+            <span class="field-hint">定义所有航点执行完毕后飞机应采取的动作，例如自动返航或原地悬停。</span>
             <select name="finishAction">
               <option value="goHome">goHome</option>
               <option value="noAction">noAction</option>
@@ -64,14 +69,16 @@
             </select>
           </label>
           <label>
-            失控是否继续执行航线
+            <span class="label-title">失控是否继续执行航线</span>
+            <span class="field-hint">当遥控链路丢失时，决定是否继续当前航线（goContinue）或立即按失控动作处理。</span>
             <select name="exitOnRCLost">
               <option value="goContinue">goContinue</option>
               <option value="executeLostAction">executeLostAction</option>
             </select>
           </label>
           <label>
-            失控动作
+            <span class="label-title">失控动作</span>
+            <span class="field-hint">当选择执行失控动作时，将触发的具体行为，例如悬停、返航或降落。</span>
             <select name="executeRCLostAction">
               <option value="hover">hover</option>
               <option value="goHome">goHome</option>
@@ -79,39 +86,48 @@
             </select>
           </label>
           <label>
-            安全起飞高度（m）
+            <span class="label-title">安全起飞高度（m）</span>
+            <span class="field-hint">飞机起飞后需上升至的最小安全高度，满足文档要求的 <code>&lt;wpml:takeOffSecurityHeight&gt;</code>。</span>
             <input type="number" name="takeOffSecurityHeight" step="any" />
           </label>
           <label>
-            起飞参考点（lon,lat,height）
+            <span class="label-title">起飞参考点（lon,lat,height）</span>
+            <span class="field-hint">填写经度、纬度、椭球高度，作为航线坐标系参考点，例如 <code>116.54,39.79,50</code>。</span>
             <input type="text" name="takeOffRefPoint" placeholder="示例：23.98057,115.987663,100" />
           </label>
           <label>
-            起飞参考点 AGL 高度（m）
+            <span class="label-title">起飞参考点 AGL 高度（m）</span>
+            <span class="field-hint">文档中的 <code>&lt;wpml:takeOffRefPointAGLHeight&gt;</code>，记录起飞点与地面的相对高度。</span>
             <input type="number" name="takeOffRefPointAGLHeight" step="any" />
           </label>
           <label>
-            全局过渡速度（m/s）
+            <span class="label-title">全局过渡速度（m/s）</span>
+            <span class="field-hint">航点之间的默认过渡速度，对应 <code>&lt;wpml:globalTransitionalSpeed&gt;</code>。</span>
             <input type="number" name="globalTransitionalSpeed" step="any" />
           </label>
           <label>
-            全局返航高度（m）
+            <span class="label-title">全局返航高度（m）</span>
+            <span class="field-hint">返航时保持的全局高度 <code>&lt;wpml:globalRTHHeight&gt;</code>，确保避开障碍。</span>
             <input type="number" name="globalRTHHeight" step="any" />
           </label>
           <label>
-            机型枚举值
+            <span class="label-title">机型枚举值</span>
+            <span class="field-hint">填写文档提供的飞行器枚举编号（<code>&lt;wpml:droneEnumValue&gt;</code>），例如 M300 对应 67。</span>
             <input type="number" name="droneEnumValue" />
           </label>
           <label>
-            机型子枚举值
+            <span class="label-title">机型子枚举值</span>
+            <span class="field-hint">部分机型需要填写子枚举（<code>&lt;wpml:droneSubEnumValue&gt;</code>），没有则填 0。</span>
             <input type="number" name="droneSubEnumValue" />
           </label>
           <label>
-            载荷枚举值
+            <span class="label-title">载荷枚举值</span>
+            <span class="field-hint">根据 Cloud API 枚举填写负载型号（<code>&lt;wpml:payloadEnumValue&gt;</code>），如禅思 H20T 为 67。</span>
             <input type="number" name="payloadEnumValue" />
           </label>
           <label>
-            载荷挂载位置
+            <span class="label-title">载荷挂载位置</span>
+            <span class="field-hint">与枚举组合使用，标明挂载在机身的索引（<code>&lt;wpml:payloadPositionIndex&gt;</code>）。</span>
             <input type="number" name="payloadPositionIndex" />
           </label>
         </div>
@@ -128,7 +144,8 @@
       <form id="templateForm" class="stack">
         <div class="field-grid">
           <label>
-            模板类型
+            <span class="label-title">模板类型</span>
+            <span class="field-hint">选择文档定义的 <code>&lt;wpml:templateType&gt;</code>，决定任务为航点、二维测绘等模式。</span>
             <select name="templateType">
               <option value="waypoint">waypoint</option>
               <option value="mapping2d">mapping2d</option>
@@ -137,59 +154,72 @@
             </select>
           </label>
           <label>
-            模板 ID
+            <span class="label-title">模板 ID</span>
+            <span class="field-hint">填写模板唯一标识 <code>&lt;wpml:templateId&gt;</code>，需与企业侧模板管理保持一致。</span>
             <input type="number" name="templateId" min="0" />
           </label>
           <label>
-            坐标模式
+            <span class="label-title">坐标模式</span>
+            <span class="field-hint">指明航点使用的地理坐标系，如国际通用 WGS84 或国内 CGCS2000。</span>
             <select name="coordinateMode">
               <option value="WGS84">WGS84</option>
               <option value="CGCS2000">CGCS2000</option>
             </select>
           </label>
           <label>
-            高程模式
+            <span class="label-title">高程模式</span>
+            <span class="field-hint">对应 <code>&lt;wpml:heightMode&gt;</code>，用于指定椭球基准面（如 EGM96 大地水准面）。</span>
             <select name="heightMode">
               <option value="EGM96">EGM96</option>
               <option value="WGS84">WGS84</option>
             </select>
           </label>
           <label>
-            全局拍摄高度（m）
+            <span class="label-title">全局拍摄高度（m）</span>
+            <span class="field-hint">模板默认的拍摄高度 <code>&lt;wpml:globalShootHeight&gt;</code>，适用于继承模板设置的航点。</span>
             <input type="number" name="globalShootHeight" step="any" />
           </label>
           <label>
-            全局航线高度（m）
+            <span class="label-title">全局航线高度（m）</span>
+            <span class="field-hint">必填的 <code>&lt;wpml:globalHeight&gt;</code>，为航点继承高度的基准值。</span>
             <input type="number" name="globalHeight" step="any" />
           </label>
           <label>
-            定位类型
+            <span class="label-title">定位类型</span>
+            <span class="field-hint">选择 GPS 或 RTK 等定位精度模式，对应 <code>&lt;wpml:positioningType&gt;</code>。</span>
             <select name="positioningType">
               <option value="GPS">GPS</option>
               <option value="RTK">RTK</option>
             </select>
           </label>
           <label class="checkbox">
-            <input type="checkbox" name="surfaceFollowModeEnable" />
-            <span>开启地形跟随模式</span>
+            <span class="checkbox-main">
+              <input type="checkbox" name="surfaceFollowModeEnable" />
+              <span class="label-title">开启地形跟随模式</span>
+            </span>
+            <span class="field-hint">勾选后启用 <code>&lt;wpml:surfaceFollowModeEnable&gt;</code>，航点高度基于地形进行动态调整。</span>
           </label>
           <label>
-            地形相对高度（m）
+            <span class="label-title">地形相对高度（m）</span>
+            <span class="field-hint">在地形跟随开启时生效，设置与地表的相对高度 <code>&lt;wpml:surfaceRelativeHeight&gt;</code>。</span>
             <input type="number" name="surfaceRelativeHeight" step="any" />
           </label>
           <label>
-            自动飞行速度（m/s）
+            <span class="label-title">自动飞行速度（m/s）</span>
+            <span class="field-hint">航线执行时默认速度 <code>&lt;wpml:autoFlightSpeed&gt;</code>，航点可选择继承或覆盖。</span>
             <input type="number" name="autoFlightSpeed" step="any" />
           </label>
           <label>
-            云台俯仰模式
+            <span class="label-title">云台俯仰模式</span>
+            <span class="field-hint">控制云台俯仰角来源，选择沿用航点自定义或模板统一设置。</span>
             <select name="gimbalPitchMode">
               <option value="usePointSetting">usePointSetting</option>
               <option value="useTemplateSetting">useTemplateSetting</option>
             </select>
           </label>
           <label>
-            航点偏航模式
+            <span class="label-title">航点偏航模式</span>
+            <span class="field-hint">模板级偏航策略 <code>&lt;wpml:waypointHeadingMode&gt;</code>，决定机头指向方式。</span>
             <select name="waypointHeadingMode">
               <option value="followWayline">followWayline</option>
               <option value="manually">manually</option>
@@ -199,15 +229,18 @@
             </select>
           </label>
           <label>
-            航点偏航角（°）
+            <span class="label-title">航点偏航角（°）</span>
+            <span class="field-hint">当偏航模式为 fixed/manual 时指定机头角度，对应 <code>&lt;wpml:waypointHeadingAngle&gt;</code>。</span>
             <input type="number" name="waypointHeadingAngle" step="any" />
           </label>
           <label>
-            POI 点（lon,lat,height）
+            <span class="label-title">POI 点（lon,lat,height）</span>
+            <span class="field-hint">当朝向兴趣点时需填写经纬高坐标，对应 <code>&lt;wpml:waypointPoiPoint&gt;</code>。</span>
             <input type="text" name="waypointPoiPoint" />
           </label>
           <label>
-            航点偏航路径模式
+            <span class="label-title">航点偏航路径模式</span>
+            <span class="field-hint">定义偏航角变化方向（顺时针/逆时针）或跟随最短弧度。</span>
             <select name="waypointHeadingPathMode">
               <option value="clockwise">clockwise</option>
               <option value="counterClockwise">counterClockwise</option>
@@ -215,7 +248,8 @@
             </select>
           </label>
           <label>
-            转弯模式
+            <span class="label-title">转弯模式</span>
+            <span class="field-hint">模板级转弯控制 <code>&lt;wpml:globalWaypointTurnMode&gt;</code>，决定飞机经过航点的方式。</span>
             <select name="globalWaypointTurnMode">
               <option value="coordinateTurn">coordinateTurn</option>
               <option value="toPointAndStopWithDiscontinuityCurvature">toPointAndStopWithDiscontinuityCurvature</option>
@@ -224,19 +258,24 @@
             </select>
           </label>
           <label class="checkbox">
-            <input type="checkbox" name="globalUseStraightLine" />
-            <span>航点间使用直线</span>
+            <span class="checkbox-main">
+              <input type="checkbox" name="globalUseStraightLine" />
+              <span class="label-title">航点间使用直线</span>
+            </span>
+            <span class="field-hint">启用后 <code>&lt;wpml:globalUseStraightLine&gt;</code> 强制航点间按直线连接，不使用弧线过渡。</span>
           </label>
         </div>
         <div class="subsection">
           <h3>负载参数（<code>&lt;wpml:payloadParam&gt;</code>）</h3>
           <div class="field-grid">
             <label>
-              负载挂载位置
+              <span class="label-title">负载挂载位置</span>
+              <span class="field-hint">负载参数内的挂载索引，与任务配置保持一致。</span>
               <input type="number" name="payloadParam.payloadPositionIndex" min="0" />
             </label>
             <label>
-              对焦模式
+              <span class="label-title">对焦模式</span>
+              <span class="field-hint">可选的 <code>&lt;wpml:focusMode&gt;</code>，例如首帧对焦或自定义。</span>
               <select name="payloadParam.focusMode">
                 <option value="">（可选）</option>
                 <option value="firstPoint">firstPoint</option>
@@ -244,7 +283,8 @@
               </select>
             </label>
             <label>
-              测光模式
+              <span class="label-title">测光模式</span>
+              <span class="field-hint">选择相机测光策略 <code>&lt;wpml:meteringMode&gt;</code>。</span>
               <select name="payloadParam.meteringMode">
                 <option value="">（可选）</option>
                 <option value="average">average</option>
@@ -252,7 +292,8 @@
               </select>
             </label>
             <label>
-              畸变矫正
+              <span class="label-title">畸变矫正</span>
+              <span class="field-hint">是否开启镜头畸变矫正 <code>&lt;wpml:dewarpingEnable&gt;</code>。</span>
               <select name="payloadParam.dewarpingEnable">
                 <option value="">（可选）</option>
                 <option value="0">0</option>
@@ -260,7 +301,8 @@
               </select>
             </label>
             <label>
-              激光雷达回波模式
+              <span class="label-title">激光雷达回波模式</span>
+              <span class="field-hint">用于激光雷达负载的回波模式 <code>&lt;wpml:returnMode&gt;</code>。</span>
               <select name="payloadParam.returnMode">
                 <option value="">（可选）</option>
                 <option value="singleReturnStrongest">singleReturnStrongest</option>
@@ -269,11 +311,13 @@
               </select>
             </label>
             <label>
-              负载采样率（Hz）
+              <span class="label-title">负载采样率（Hz）</span>
+              <span class="field-hint">指定负载采样频率 <code>&lt;wpml:samplingRate&gt;</code>。</span>
               <input type="number" name="payloadParam.samplingRate" step="1" min="0" />
             </label>
             <label>
-              扫描模式
+              <span class="label-title">扫描模式</span>
+              <span class="field-hint">激光雷达扫描策略 <code>&lt;wpml:scanningMode&gt;</code>，如重复或非重复。</span>
               <select name="payloadParam.scanningMode">
                 <option value="">（可选）</option>
                 <option value="repetitive">repetitive</option>
@@ -281,7 +325,8 @@
               </select>
             </label>
             <label>
-              真彩上色
+              <span class="label-title">真彩上色</span>
+              <span class="field-hint">控制建模是否启用真彩上色 <code>&lt;wpml:modelColoringEnable&gt;</code>。</span>
               <select name="payloadParam.modelColoringEnable">
                 <option value="">（可选）</option>
                 <option value="0">0</option>
@@ -289,7 +334,8 @@
               </select>
             </label>
             <label>
-              图片格式列表（逗号分隔）
+              <span class="label-title">图片格式列表（逗号分隔）</span>
+              <span class="field-hint">配置相机输出的图像格式 <code>&lt;wpml:imageFormat&gt;</code>，如 <code>wide,zoom</code>。</span>
               <input type="text" name="payloadParam.imageFormat" placeholder="例如：wide,zoom" />
             </label>
           </div>
@@ -308,71 +354,98 @@
         <form id="waypointForm" class="stack">
           <input type="hidden" name="editIndex" />
           <label>
-            航点名称（<code>&lt;name&gt;</code>）
+            <span class="label-title">航点名称（<code>&lt;name&gt;</code>）</span>
+            <span class="field-hint">显示在列表与 KML <code>&lt;name&gt;</code> 中的标题，建议按顺序命名。</span>
             <input type="text" name="name" required placeholder="示例：航点 1" />
           </label>
           <label>
-            描述（可选）
+            <span class="label-title">描述（可选）</span>
+            <span class="field-hint">写入 <code>&lt;description&gt;</code>，用于补充任务备注。</span>
             <textarea name="description" rows="2" placeholder="补充说明"></textarea>
           </label>
           <div class="field-grid">
             <label>
-              经度
+              <span class="label-title">经度</span>
+              <span class="field-hint">航点 <code>&lt;coordinates&gt;</code> 中的经度（度），需符合所选坐标系。</span>
               <input type="number" name="longitude" step="any" required />
             </label>
             <label>
-              纬度
+              <span class="label-title">纬度</span>
+              <span class="field-hint">航点 <code>&lt;coordinates&gt;</code> 中的纬度（度）。</span>
               <input type="number" name="latitude" step="any" required />
             </label>
             <label>
-              高程（可选，写入 <code>&lt;coordinates&gt;</code>）
+              <span class="label-title">高程（可选，写入 <code>&lt;coordinates&gt;</code>）</span>
+              <span class="field-hint">需要时可写入坐标高度分量，不同于 AGL/椭球高度。</span>
               <input type="number" name="coordinateAltitude" step="any" />
             </label>
           </div>
           <div class="field-grid">
             <label>
-              椭球高度（m，<code>&lt;wpml:ellipsoidHeight&gt;</code>）
+              <span class="label-title">椭球高度（m，<code>&lt;wpml:ellipsoidHeight&gt;</code>）</span>
+              <span class="field-hint">基于选定椭球的高度，常用于机载导航。</span>
               <input type="number" name="ellipsoidHeight" step="any" />
             </label>
             <label>
-              AGL 高度（m，<code>&lt;wpml:height&gt;</code>）
+              <span class="label-title">AGL 高度（m，<code>&lt;wpml:height&gt;</code>）</span>
+              <span class="field-hint">相对地面的高度，可根据“继承全局高度”自动填充。</span>
               <input type="number" name="height" step="any" />
             </label>
             <label>
-              云台俯仰角（°，<code>&lt;wpml:gimbalPitchAngle&gt;</code>）
+              <span class="label-title">云台俯仰角（°，<code>&lt;wpml:gimbalPitchAngle&gt;</code>）</span>
+              <span class="field-hint">控制该航点执行时的云台俯仰角度。</span>
               <input type="number" name="gimbalPitchAngle" step="any" />
             </label>
           </div>
           <div class="field-grid">
             <label class="checkbox">
-              <input type="checkbox" name="useGlobalHeight" checked />
-              <span>继承全局高度</span>
+              <span class="checkbox-main">
+                <input type="checkbox" name="useGlobalHeight" checked />
+                <span class="label-title">继承全局高度</span>
+              </span>
+              <span class="field-hint">选中时使用模板 <code>&lt;wpml:globalHeight&gt;</code>，取消后需填写本航点高度。</span>
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="useGlobalSpeed" checked />
-              <span>继承全局速度</span>
+              <span class="checkbox-main">
+                <input type="checkbox" name="useGlobalSpeed" checked />
+                <span class="label-title">继承全局速度</span>
+              </span>
+              <span class="field-hint">沿用 <code>&lt;wpml:autoFlightSpeed&gt;</code>，取消后可设置单点速度。</span>
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="useGlobalHeadingParam" checked />
-              <span>继承全局偏航参数</span>
+              <span class="checkbox-main">
+                <input type="checkbox" name="useGlobalHeadingParam" checked />
+                <span class="label-title">继承全局偏航参数</span>
+              </span>
+              <span class="field-hint">遵循模板级偏航设置，取消后可自定义 <code>&lt;wpml:waypointHeadingParam&gt;</code>。</span>
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="useGlobalTurnParam" checked />
-              <span>继承全局转弯参数</span>
+              <span class="checkbox-main">
+                <input type="checkbox" name="useGlobalTurnParam" checked />
+                <span class="label-title">继承全局转弯参数</span>
+              </span>
+              <span class="field-hint">使用全局转弯模式，取消后填写本航点的 <code>&lt;wpml:waypointTurnParam&gt;</code>。</span>
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="useStraightLine" />
-              <span>航段贴合直线</span>
+              <span class="checkbox-main">
+                <input type="checkbox" name="useStraightLine" />
+                <span class="label-title">航段贴合直线</span>
+              </span>
+              <span class="field-hint">对当前航段设置 <code>&lt;wpml:useStraightLine&gt;</code>，无需继承模板。</span>
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="isRisky" />
-              <span>标记为危险点</span>
+              <span class="checkbox-main">
+                <input type="checkbox" name="isRisky" />
+                <span class="label-title">标记为危险点</span>
+              </span>
+              <span class="field-hint">标记 <code>&lt;wpml:isRisky&gt;</code>，提醒执行人员注意危险航点。</span>
             </label>
           </div>
           <div class="subsection">
             <h3>航点速度（<code>&lt;wpml:waypointSpeed&gt;</code>）</h3>
             <label>
-              当不继承全局速度时的目标速度（m/s）
+              <span class="label-title">当不继承全局速度时的目标速度（m/s）</span>
+              <span class="field-hint">设置 <code>&lt;wpml:waypointSpeed&gt;</code> 的数值，覆盖全局飞行速度。</span>
               <input type="number" name="waypointSpeed" step="any" />
             </label>
           </div>
@@ -380,7 +453,8 @@
             <h3>航点偏航参数（<code>&lt;wpml:waypointHeadingParam&gt;</code>）</h3>
             <div class="field-grid">
               <label>
-                偏航模式
+                <span class="label-title">偏航模式</span>
+                <span class="field-hint">航点独立的偏航策略，如面向航线或兴趣点。</span>
                 <select name="waypointHeadingMode">
                   <option value="followWayline">followWayline</option>
                   <option value="manually">manually</option>
@@ -390,15 +464,18 @@
                 </select>
               </label>
               <label>
-                偏航角（°）
+                <span class="label-title">偏航角（°）</span>
+                <span class="field-hint">对应 <code>&lt;wpml:waypointHeadingAngle&gt;</code>，在固定角模式下填写。</span>
                 <input type="number" name="waypointHeadingAngle" step="any" />
               </label>
               <label>
-                兴趣点（lat,lon,height）
+                <span class="label-title">兴趣点（lat,lon,height）</span>
+                <span class="field-hint">当朝向 POI 时需提供坐标 <code>&lt;wpml:waypointPoiPoint&gt;</code>。</span>
                 <input type="text" name="waypointPoiPoint" placeholder="例如：23.98,115.98,0" />
               </label>
               <label>
-                偏航转动方向
+                <span class="label-title">偏航转动方向</span>
+                <span class="field-hint">设置偏航角变化方向 <code>&lt;wpml:waypointHeadingPathMode&gt;</code>。</span>
                 <select name="waypointHeadingPathMode">
                   <option value="clockwise">clockwise</option>
                   <option value="counterClockwise">counterClockwise</option>
@@ -411,7 +488,8 @@
             <h3>航点转弯参数（<code>&lt;wpml:waypointTurnParam&gt;</code>）</h3>
             <div class="field-grid">
               <label>
-                转弯模式
+                <span class="label-title">转弯模式</span>
+                <span class="field-hint">针对该航点的转弯策略 <code>&lt;wpml:waypointTurnMode&gt;</code>。</span>
                 <select name="waypointTurnMode">
                   <option value="coordinateTurn">coordinateTurn</option>
                   <option value="toPointAndStopWithDiscontinuityCurvature">toPointAndStopWithDiscontinuityCurvature</option>
@@ -420,7 +498,8 @@
                 </select>
               </label>
               <label>
-                转弯截距（m）
+                <span class="label-title">转弯截距（m）</span>
+                <span class="field-hint">对应 <code>&lt;wpml:waypointTurnDampingDist&gt;</code>，调节提前转弯距离。</span>
                 <input type="number" name="waypointTurnDampingDist" step="any" />
               </label>
             </div>
